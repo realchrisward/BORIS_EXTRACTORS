@@ -1,6 +1,8 @@
 
 ## import modules
 import json
+import tkinter
+import tkinter.filedialog
 
 ## define functions
 def grabjson(jsfile):
@@ -13,6 +15,7 @@ def makeobslist(bf):
     ol=[i for i in bf['observations'].keys()]
     ol.sort()
     return ol
+
 def makebehlist(bf):
 
     bl=[bf['behaviors_conf'][k]['code']
@@ -22,11 +25,39 @@ def makebehlist(bf):
     #for k in bf['behaviors_conf']:
     #    bl.append(borisdata['behaviors_conf'][k]['code'])
     return bl
+
+def guiOpenFileName(kwargs={}):
+    """Returns the path to the files selected by the GUI.
+*Function calls on tkFileDialog and uses those arguments
+  ......
+  (declare as a dictionairy)
+  {"defaultextension":'',"filetypes":'',"initialdir":'',...
+  "initialfile":'',"multiple":'',"message":'',"parent":'',"title":''}
+  ......"""
+    root=tkinter.Tk()
+    outputtext=tkinter.filedialog.askopenfilename(
+        **kwargs)
+    root.destroy()
+    return outputtext
+
+def guiSaveFileName(kwargs={}):
+    """Returns the path to the filename and location entered in the GUI.
+*Function calls on tkFileDialog and uses those arguments
+  ......
+  (declare as a dictionairy)
+  {"defaultextension":'',"filetypes":'',"initialdir":'',...
+  "initialfile":'',"multiple":'',"message":'',"parent":'',"title":''}
+  ......"""
+    root=tkinter.Tk()
+    outputtext=tkinter.filedialog.asksaveasfilename(
+        **kwargs)
+    root.destroy()
+    return outputtext
                   
 ## get boris filepath
 
 ## script
-borisfilepath=input('path to boris file')
+borisfilepath=guiOpenFileName({'title':'path to boris file','filetypes':[('boris file','.boris')]})
 ##
 borisdata=grabjson(borisfilepath)
 obslist=makeobslist(borisdata)
@@ -51,8 +82,10 @@ for obs in obslist:
                                 for i in range(len(beh_evt_list[b]['stop']))]
         beh_evt_list[b]['totaldur']=sum(beh_evt_list[b]['dur'])
         beh_evt_list[b]['totalcount']=len(beh_evt_list[b]['start'])
-        beh_evt_list[b]['latency']=min(beh_evt_list[b]['start'])
-
+        try:
+            beh_evt_list[b]['latency']=min(beh_evt_list[b]['start'])
+        except:
+            beh_evt_list[b]['latency']='nan'
     ## bins [settings here]
     bin_dur=300
     bin_start=0
@@ -110,4 +143,13 @@ for obs in obslist:
             BIN_LINE+=str(dataholder[obs]['bins'][i]['behav'][b]['bindur'])+'\t'
     LINETEXT=BASIC_Line+'\t'+BEHAV_LINE_latency+'\t'+BEHAV_LINE_count+'\t'+BEHAV_LINE_dur+'\t'+BIN_LINE+'\n'    
     TEXTOUT+=LINETEXT
-print(TEXTOUT)
+#print(TEXTOUT)
+## output to file
+outputfilepath=guiSaveFileName({'title':'save output as','filetypes':[('text file','.txt')]})
+##
+if outputfilepath[-4:].lower()!='.txt':
+    outputfilepath+='.txt'
+##
+with open(outputfilepath,'w') as outfile:
+    outfile.write(TEXTOUT)
+input('press enter to close')
